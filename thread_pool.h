@@ -44,9 +44,6 @@ typedef struct ThreadPool
 
 //创建线程池
 ThreadPool *thread_pool_init(int min_thread, int max_thread, int task_capcity);
-//
-void *worker_thread(void *arg);
-void *manager_thread(void *arg);
 //销毁线程池
 
 //添加任务到线程池
