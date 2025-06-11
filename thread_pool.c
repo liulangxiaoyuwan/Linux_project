@@ -71,28 +71,48 @@ void *worker_thread(void *arg)
     while (1)
     {
         pthread_mutex_lock(&pool->pool_mutex);
-//等待当前任务队列是否为空
+        // 等待当前任务队列是否为空
         while (pool->cur_task_size == 0 && !pool->shutdown)
         {
-            //如果为空 阻塞工作进程
+            // 如果为空 阻塞工作进程
             pthread_cond_wait(&pool->notEmpty, &pool->pool_mutex);
         }
-        //判断线程池是否关闭
-        if(pool->shutdown)
+        // 判断线程池是否关闭
+        if (pool->shutdown)
         {
             pthread_mutex_unlock(&pool->pool_mutex);
             pthread_exit(NULL);
         }
 
-        //获取任务
+        // 获取任务
         Task task;
-        task.fun=pool->tasks[pool->front].fun;
-        task.arg=pool->tasks[pool->front].arg; 
+        task.fun = pool->tasks[pool->front].fun;
+        task.arg = pool->tasks[pool->front].arg;
+
+        pool->front= (pool->front + 1) % pool->task_capcity;
+        pool->cur_task_size--;
+
         pthread_mutex_unlock(&pool->pool_mutex);
+
+        printf("Thread %ld is working on task\n", syscall(SYS_gettid));
+
+        pthread_mutex_lock(&pool->busy_mutex);
+        pool->busy_thread++;
+        pthread_mutex_unlock(&pool->busy_mutex);
+        task.fun(task.arg);
+
+        free(task.arg);
+        task.arg=NULL;
+
+        printf("Thread %ld finished task\n", syscall(SYS_gettid));
+        pthread_mutex_lock(&pool->busy_mutex);
+        pool->busy_thread--;
+        pthread_mutex_unlock(&pool->busy_mutex);
+
     }
 }
 
 void *manager_thread(void *arg)
 {
-
+    
 }
